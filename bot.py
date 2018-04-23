@@ -14,6 +14,7 @@
 
 import os
 import sys
+import json
 from argparse import ArgumentParser
 
 from flask import Flask, request, abort
@@ -26,6 +27,9 @@ from linebot.exceptions import (
 from linebot.models import (
     MessageEvent, TextMessage, TextSendMessage, FollowEvent,
 )
+
+with open("message.json") as data_file:
+    message_data = json.load(data_file)
 
 app = Flask(__name__)
 
@@ -59,6 +63,15 @@ def callback():
         abort(400)
 
     return 'OK'
+
+
+@handler.add(FollowEvent)
+def follow_text(event):
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=message_data["follow_text"])
+    )
+
 
 
 @handler.add(MessageEvent, message=TextMessage)
