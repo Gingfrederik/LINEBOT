@@ -13,11 +13,15 @@
 #  under the License.
 
 import os
+import io
 import sys
 import json
 from argparse import ArgumentParser
 
 from flask import Flask, request, abort
+from google.cloud import speech
+from google.cloud.speech import enums
+from google.cloud.speech import types
 from linebot import (
     LineBotApi, WebhookHandler
 )
@@ -25,8 +29,31 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage, FollowEvent,
+    MessageEvent, TextMessage, AudioMessage, TextSendMessage, FollowEvent,
 )
+
+
+def transcribe_file(speech_file):
+    client = speech.SpeechClient()
+
+    with io.open(speech_file, 'rb') as audio_file:
+        content = audio_file.read()
+
+    audio = types.RecognitionAudio(content=content)
+    config = types.RecognitionConfig(
+        encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+        sample_rate_hertz=16000,
+        language_code='cmn-Hant-TW')
+
+    response = client.recognize(config, audio)
+    results = list(response.results)
+
+    try:
+        print(results[0].alternatives[0].transcript)
+        return(results[0].alternatives[0].transcript)
+    except:
+        print('error')
+
 
 with open("message.json") as data_file:
     message_data = json.load(data_file)
@@ -72,6 +99,27 @@ def follow_text(event):
         TextSendMessage(text=message_data["follow_text"])
     )
 
+
+
+@handler.add(MessageEvent, message=AudioMessage)
+def audio(event):
+    message_content = line_bot_api.get_message_content(event.message.id)
+
+    with open("audio.m4a", 'wb') as fd:
+        for chunk in message_content.iter_content():
+            fd.write(chunk)
+    os.system("avconv -i audio.m4a audio.wav -y")
+    mess = transcribe_file('audio.wav')
+    if mess =='error':
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text="你可能要在說一次")
+                )
+    else:
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=f'你是說：{mess}')
+                )
 
 
 @handler.add(MessageEvent, message=TextMessage)
