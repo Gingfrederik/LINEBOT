@@ -29,7 +29,8 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, AudioMessage, TextSendMessage, FollowEvent,
+    MessageEvent, TextMessage, AudioMessage, TextSendMessage,
+    FollowEvent, SourceUser,
 )
 
 
@@ -94,9 +95,13 @@ def callback():
 
 @handler.add(FollowEvent)
 def follow_text(event):
+    profile = line_bot_api.get_profile(event.source.user_id)
+
     line_bot_api.reply_message(
         event.reply_token,
-        TextSendMessage(text=message_data["follow_text"])
+        TextSendMessage(
+            text=profile.display_name+message_data["follow_text"]
+            )
     )
 
 
