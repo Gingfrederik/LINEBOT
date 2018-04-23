@@ -50,7 +50,6 @@ def transcribe_file(speech_file):
     results = list(response.results)
 
     try:
-        print(results[0].alternatives[0].transcript)
         return(results[0].alternatives[0].transcript)
     except:
         print('error')
@@ -115,7 +114,7 @@ def audio(event):
             fd.write(chunk)
     os.system("avconv -i audio.m4a audio.wav -y")
     mess = transcribe_file('audio.wav')
-    if mess =='error':
+    if not mess:
         line_bot_api.reply_message(
                 event.reply_token,
                 TextSendMessage(text="你可能要在說一次")
