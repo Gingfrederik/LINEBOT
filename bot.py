@@ -34,6 +34,7 @@ from linebot.models import (
 )
 
 
+# Google Speech to text API
 def transcribe_file(speech_file):
     client = speech.SpeechClient()
 
@@ -102,7 +103,6 @@ def follow_text(event):
             text=profile.display_name+message_data["follow_text"]
             )
     )
-
 
 
 @handler.add(MessageEvent, message=AudioMessage)
