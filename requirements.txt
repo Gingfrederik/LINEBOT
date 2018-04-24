@@ -1,3 +1,4 @@
 flask
+requests
 line-bot-sdk
 google-cloud-speech

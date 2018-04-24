@@ -16,22 +16,27 @@ import os
 import io
 import sys
 import json
+from dateitme import date
 from argparse import ArgumentParser
 
 from flask import Flask, request, abort
 from google.cloud import speech
-from google.cloud.speech import enums
-from google.cloud.speech import types
+from google.cloud.speech import enums, types
 from linebot import (
-    LineBotApi, WebhookHandler
-)
+        LineBotApi, WebhookHandler
+        )
 from linebot.exceptions import (
-    InvalidSignatureError
-)
+        InvalidSignatureError
+        )
 from linebot.models import (
-    MessageEvent, TextMessage, AudioMessage, TextSendMessage,
-    FollowEvent, SourceUser,
-)
+        MessageEvent, TextMessage, AudioMessage, TextSendMessage,
+        FollowEvent, TemplateSendMessage, ButtonsTemplate,
+        PostbackTemplateAction, MessageTemplateAction, StickerSendMessage,
+        )
+
+
+week_day = ["Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday","Sunday"]
 
 
 # Google Speech to text API
@@ -43,17 +48,14 @@ def transcribe_file(speech_file):
 
     audio = types.RecognitionAudio(content=content)
     config = types.RecognitionConfig(
-        encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=16000,
-        language_code='cmn-Hant-TW')
+            encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            language_code='cmn-Hant-TW')
 
     response = client.recognize(config, audio)
     results = list(response.results)
 
-    try:
-        return(results[0].alternatives[0].transcript)
-    except:
-        print('error')
+    return(results[0].alternatives[0].transcript)
 
 
 with open("message.json") as data_file:
@@ -98,11 +100,16 @@ def follow_text(event):
     profile = line_bot_api.get_profile(event.source.user_id)
 
     line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(
-            text=profile.display_name+message_data["follow_text"]
+            event.reply_token, [
+                TextSendMessage(
+                    text=profile.display_name+message_data["follow_text"]
+                    ),
+                StickerSendMessage(
+                    package_id='2',
+                    sticker_id='22'
+                    )
+                ]
             )
-    )
 
 
 @handler.add(MessageEvent, message=AudioMessage)
@@ -128,16 +135,56 @@ def audio(event):
 
 @handler.add(MessageEvent, message=TextMessage)
 def message_text(event):
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=event.message.text)
-    )
+    text = event.message.text
+    if text == 'About':
+        today_weekday = date.today().weekday()
+        if today_weekday != 5:
+            line_bot_api.reply_message(
+                    event.reply_token,[
+                        TextSendMessage(text=message_data['about']+week_day[today_weekday]),
+                        StickerSendMessage(
+                            package_id='1',
+                            sticker_id='116'
+                            )
+                        ]
+                    )
+        else:
+            line_bot_api.reply_message(
+                    event.reply_token,[
+                        TextSendMessage(text=message_data['about_t']+week_day[today_weekday]),
+                        StickerSendMessage(
+                            package_id='1',
+                            sticker_id='116'
+                            )
+                        ]
+                    )
+
+    elif text == 'Info':
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=message_data['info'])
+                )
+    elif text == 'Help':
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=message_data['help'])
+                )
+    elif text == 'Github':
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=message_data['github'])
+                )
+    else:
+        line_bot_api.reply_message(
+                event.reply_token,
+                TextSendMessage(text=text)
+                )
 
 
 if __name__ == "__main__":
     arg_parser = ArgumentParser(
-        usage='Usage: python ' + __file__ + ' [--port <port>] [--help]'
-    )
+            usage='Usage: python ' + __file__ + ' [--port <port>] [--help]'
+            )
     arg_parser.add_argument('-p', '--port', default=8080, help='port')
     arg_parser.add_argument('-d', '--debug', default=False, help='debug')
     options = arg_parser.parse_args()
