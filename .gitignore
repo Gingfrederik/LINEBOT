@@ -1,6 +1,10 @@
+__pycache__/
 token.sh
 *.json
 *.ini
 *.yaml
 *.wav
 *.m4a
+*.err
+*.log
+*.conf
