@@ -35,7 +35,7 @@ from linebot.models import (
         )
 
 
-week_day = ["Monday", "Tuesday", "Wednesday",
+weekday = ["Monday", "Tuesday", "Wednesday",
         "Thursday", "Friday", "Saturday","Sunday"]
 
 
@@ -137,11 +137,13 @@ def audio(event):
 def message_text(event):
     text = event.message.text
     if text == 'About':
-        today_weekday = date.today().weekday()
-        if today_weekday != 5:
+        today = date.today().weekday()
+        if today != 5:
             line_bot_api.reply_message(
-                    event.reply_token,[
-                        TextSendMessage(text=message_data['about']+week_day[today_weekday]),
+                    event.reply_token, [
+                        TextSendMessage(
+                            text=message_data['about'].format(weekday[today])
+                            ),
                         StickerSendMessage(
                             package_id='1',
                             sticker_id='116'
@@ -150,11 +152,13 @@ def message_text(event):
                     )
         else:
             line_bot_api.reply_message(
-                    event.reply_token,[
-                        TextSendMessage(text=message_data['about_t']+week_day[today_weekday]),
+                    event.reply_token, [
+                        TextSendMessage(
+                            text=message_data['about_t'].format(weekday[today])
+                            ),
                         StickerSendMessage(
                             package_id='1',
-                            sticker_id='116'
+                            sticker_id='106'
                             )
                         ]
                     )
